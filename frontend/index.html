@@ -1,0 +1,305 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Exam Scheduler</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">S</div>
+        <div>
+          <strong>SmartExam</strong>
+          <small>AI Scheduling Studio</small>
+        </div>
+      </div>
+
+      <p class="menu-label">WORKSPACE</p>
+
+      <nav>
+        <button class="nav-btn active" data-page="dashboard">
+          Dashboard
+        </button>
+        <button class="nav-btn" data-page="upload">
+          Upload Dataset
+        </button>
+        <button class="nav-btn" data-page="manual">
+          Manual Input
+        </button>
+        <button class="nav-btn" data-page="timetable">
+          Exam Timetable
+        </button>
+        <button class="nav-btn" data-page="comparison">
+          AI Comparison
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span id="api-status">Checking backend...</span>
+        <a href="/docs" target="_blank">FastAPI Documentation</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">ARTIFICIAL INTELLIGENCE PROJECT</p>
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+        <span class="header-tag">CSP Scheduling System</span>
+      </header>
+
+      <div id="message" class="message" hidden></div>
+
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="page active">
+        <div class="hero">
+          <p class="eyebrow">INTELLIGENT UNIVERSITY SCHEDULING</p>
+          <h2>Plan exams smarter.</h2>
+          <p>
+            Generate validated exam schedules, compare seven
+            AI algorithms, and export detailed results.
+          </p>
+          <button class="primary" data-page="upload">
+            Create Timetable
+          </button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span>Exams Scheduled</span>
+            <strong id="stat-exams">—</strong>
+          </div>
+          <div class="stat">
+            <span>Execution Time</span>
+            <strong id="stat-time">—</strong>
+          </div>
+          <div class="stat">
+            <span>Algorithm</span>
+            <strong id="stat-algorithm">—</strong>
+          </div>
+          <div class="stat">
+            <span>Validation</span>
+            <strong id="stat-validation">—</strong>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>How it works</h3>
+          <p>
+            Upload university information or enter it manually.
+            The CSP engine selects an algorithm, generates a
+            timetable, checks constraints, and optionally runs
+            seven algorithms for performance comparison.
+          </p>
+        </div>
+      </section>
+
+      <!-- FILE UPLOAD -->
+      <section id="upload" class="page">
+        <div class="card">
+          <h2>Upload University Dataset</h2>
+          <p class="muted">
+            Supported formats: Excel (.xlsx), JSON, CSV ZIP.
+          </p>
+
+          <form id="upload-form">
+            <label>University Dataset</label>
+            <input
+              id="file-input"
+              type="file"
+              accept=".xlsx,.json,.zip"
+              required
+            >
+
+            <label>Scheduling Algorithm</label>
+            <select id="upload-algorithm"></select>
+
+            <div class="form-grid">
+              <div>
+                <label>Start Date</label>
+                <input id="start-date" type="date"
+                  value="2026-12-07" required>
+              </div>
+              <div>
+                <label>End Date</label>
+                <input id="end-date" type="date"
+                  value="2026-12-18" required>
+              </div>
+              <div>
+                <label>Daily Start Time</label>
+                <input id="start-time" type="time"
+                  value="09:00" required>
+              </div>
+              <div>
+                <label>Daily End Time</label>
+                <input id="end-time" type="time"
+                  value="18:00" required>
+              </div>
+              <div>
+                <label>Main Timeout (seconds)</label>
+                <input id="timeout" type="number"
+                  min="1" max="300" value="30">
+              </div>
+              <div>
+                <label>Comparison Timeout (seconds)</label>
+                <input id="compare-timeout" type="number"
+                  min="1" max="300" value="30">
+              </div>
+            </div>
+
+            <label>Excluded Dates (comma separated)</label>
+            <input id="excluded-dates" type="text"
+              placeholder="2026-12-25, 2027-01-01">
+
+            <div class="checks">
+              <label><input id="saturday" type="checkbox">
+                Include Saturdays</label>
+              <label><input id="sunday" type="checkbox">
+                Include Sundays</label>
+              <label><input id="compare" type="checkbox" checked>
+                Compare all seven algorithms</label>
+            </div>
+
+            <button class="primary" type="submit"
+              id="upload-submit">
+              Generate Exam Schedule
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- MANUAL INPUT -->
+      <section id="manual" class="page">
+        <div class="card">
+          <h2>Manual University Input</h2>
+          <p class="muted">
+            Paste a JSON request containing departments,
+            students, exams, professors, rooms, and period.
+          </p>
+
+          <div class="actions">
+            <button id="load-example" class="secondary">
+              Load Example
+            </button>
+            <button id="format-json" class="secondary">
+              Format JSON
+            </button>
+          </div>
+
+          <form id="manual-form">
+            <textarea
+              id="manual-json"
+              rows="20"
+              spellcheck="false"
+              placeholder="Paste your university JSON here..."
+            ></textarea>
+
+            <button class="primary" type="submit"
+              id="manual-submit">
+              Generate Manual Timetable
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- TIMETABLE -->
+      <section id="timetable" class="page">
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <h2>Generated Exam Timetable</h2>
+              <p id="timetable-summary" class="muted">
+                No schedule generated yet.
+              </p>
+            </div>
+            <div class="actions">
+              <a id="excel-link" class="secondary disabled">
+                Excel
+              </a>
+              <a id="csv-link" class="secondary disabled">
+                CSV
+              </a>
+            </div>
+          </div>
+
+          <input
+            id="timetable-search"
+            type="search"
+            placeholder="Search exam, room, date or course..."
+          >
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Exam</th>
+                  <th>Course</th>
+                  <th>Date</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Room</th>
+                  <th>Professor</th>
+                </tr>
+              </thead>
+              <tbody id="timetable-body">
+                <tr>
+                  <td colspan="7">No timetable available.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALGORITHM COMPARISON -->
+      <section id="comparison" class="page">
+        <div class="card">
+          <div class="section-header">
+            <div>
+              <h2>Seven-Algorithm Comparison</h2>
+              <p id="comparison-status" class="muted">
+                No comparison started.
+              </p>
+            </div>
+            <div class="actions">
+              <a id="comparison-excel"
+                class="secondary disabled">Excel Report</a>
+              <a id="comparison-csv"
+                class="secondary disabled">CSV Report</a>
+            </div>
+          </div>
+
+          <div id="comparison-chart" class="chart"></div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Algorithm</th>
+                  <th>Status</th>
+                  <th>Time (s)</th>
+                  <th>Assignments</th>
+                  <th>Backtracks</th>
+                </tr>
+              </thead>
+              <tbody id="comparison-body">
+                <tr>
+                  <td colspan="5">No results available.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

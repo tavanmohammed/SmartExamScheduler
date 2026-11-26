@@ -1,0 +1,21 @@
+size,scenario,algorithm,runs,valid_solutions,success_rate,timeouts,unsat,median_solved_time_ms,median_assignments,median_backtracks,median_constraint_checks,median_nodes
+small,normal,MRV + Forward Checking,3,3,100.0,0,0,89.16390000013052,10,0,43930,11
+small,normal,MRV,3,3,100.0,0,0,88.15020000020013,10,0,56294,11
+small,normal,Forward Checking,3,3,100.0,0,0,51.65489999944839,10,0,28147,11
+small,normal,MRV + FC + LCV,3,3,100.0,0,0,4701.675399999658,10,0,3550647,11
+small,normal,Basic Backtracking,3,3,100.0,0,0,10.099899999659101,10,0,3198,11
+small,restricted,MRV + Forward Checking,3,3,100.0,0,0,20.540799999253068,10,0,9213,11
+small,restricted,MRV,3,3,100.0,0,0,26.488999999855878,10,0,12496,11
+small,restricted,Forward Checking,3,3,100.0,0,0,41.991500000222004,10,0,24872,11
+small,restricted,MRV + FC + LCV,3,2,66.66666666666667,1,0,1303.6558500002684,10.0,0.0,947339.0,11.0
+small,restricted,Basic Backtracking,3,2,66.66666666666667,1,0,4.578000000037719,10.0,0.0,1058.0,11.0
+small,dense_conflicts,MRV + Forward Checking,3,3,100.0,0,0,71.40619999972841,10,0,41962,11
+small,dense_conflicts,MRV,3,3,100.0,0,0,83.0922000004648,10,0,52345,11
+small,dense_conflicts,Forward Checking,3,3,100.0,0,0,53.3196999995198,10,0,33439,11
+small,dense_conflicts,MRV + FC + LCV,3,2,66.66666666666667,1,0,3664.82059999953,10.0,0.0,2672426.5,11.0
+small,dense_conflicts,Basic Backtracking,3,3,100.0,0,0,9.555599999657716,10,0,4095,11
+small,impossible,MRV + Forward Checking,3,0,0.0,0,3,,,,,
+small,impossible,MRV,3,0,0.0,0,3,,,,,
+small,impossible,Forward Checking,3,0,0.0,0,3,,,,,
+small,impossible,MRV + FC + LCV,3,0,0.0,0,3,,,,,
+small,impossible,Basic Backtracking,3,0,0.0,0,3,,,,,

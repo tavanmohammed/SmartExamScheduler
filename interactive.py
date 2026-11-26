@@ -1,535 +1,692 @@
-# =====================================================
-# SMART EXAM SCHEDULER
-# AI-Based University Exam Scheduling System
-# =====================================================
 
-from backtracking import basic_backtracking
-from mrv import mrv_backtracking
-from forward_checking import forward_checking
-from mrv_forward_checking import mrv_forward_checking
+"""
+SMART EXAM SCHEDULER
+Interactive Command-Line Scheduling Interface
+
+Features:
+    - Sample university data
+    - Generated experimental datasets
+    - University JSON file import
+    - Manual JSON input
+    - Seven CSP algorithm configurations
+    - Automatic algorithm selection
+    - Independent timetable validation
+    - Algorithm performance metrics
+    - Student and professor scheduling constraints
+
+Assignment format:
+    exam_id -> (slot_index, room_id)
+
+No Teaching Assistant dependencies.
+"""
+
+import json
+import math
+
+from pathlib import Path
+
+from university_data import get_university_data
+
+from dataset_generator import (
+    PRESETS,
+    generate_dataset,
+)
+
+from conflicts import (
+    get_course_students,
+    generate_conflicts,
+)
+
+from algorithm_selector import (
+    ALGORITHMS,
+    run_algorithm,
+)
+
+from validator import validate_schedule
+
+from schemas import UniversityData
 
 
-# =====================================================
-# INPUT HELPER FUNCTIONS
-# =====================================================
+# ============================================================
+# DISPLAY EXAMINATION TIMETABLE
+# ============================================================
 
-def get_positive_integer(message):
+def display_schedule(data, schedule):
+    """
+    Display a scheduled examination timetable.
 
-    while True:
-        try:
-            value = int(input(message))
+    Columns:
+        - Examination
+        - Day
+        - Time
+        - Room
+        - Professor
 
-            if value > 0:
-                return value
+    Each assignment is:
+        (slot_index, room_id)
+    """
 
-            print("Please enter a positive number.")
+    print("\nEXAMINATION TIMETABLE")
+    print("=" * 110)
 
-        except ValueError:
-            print("Invalid input. Please enter a whole number.")
-
-
-def get_text(message):
-
-    while True:
-        value = input(message).strip()
-
-        if value:
-            return value
-
-        print("This field cannot be empty.")
-
-
-# =====================================================
-# DISPLAY SCHEDULE
-# =====================================================
-
-def display_schedule(schedule, time_slots):
+    if not schedule:
+        print("No examinations to display.")
+        return
 
     print(
-        f"\n{'Course':<15}"
-        f"{'Day':<18}"
+        f"{'Examination':<22}"
+        f"{'Day':<15}"
         f"{'Time':<15}"
-        f"{'Classroom':<15}"
+        f"{'Room':<15}"
+        f"{'Professor':<30}"
     )
 
-    print("-" * 63)
+    print("-" * 110)
 
-    sorted_schedule = sorted(
+    ordered = sorted(
         schedule.items(),
-        key=lambda item: item[1][0]
+        key=lambda item: (
+            item[1][0],
+            item[0],
+        ),
     )
 
-    for course_code, assignment in sorted_schedule:
+    for exam_id, assignment in ordered:
 
-        slot_index, room_id = assignment
+        if (
+            not isinstance(assignment, (list, tuple))
+            or len(assignment) != 2
+        ):
+            raise ValueError(
+                f"Invalid assignment for {exam_id}. "
+                "Expected (slot_index, room_id)."
+            )
 
-        slot = time_slots[slot_index]
+        slot, room = assignment
+
+        time_slot = data["time_slots"][slot]
+
+        exam = data["exams"][exam_id]
+
+        professor_id = exam.get(
+            "professor_id"
+        )
+
+        professor_info = data.get(
+            "professors", {}
+        ).get(
+            professor_id, {}
+        )
+
+        professor_name = professor_info.get(
+            "name",
+            professor_id or "Not assigned",
+        )
+
+        day = str(
+            time_slot.get("day", "N/A")
+        )
+
+        exam_time = str(
+            time_slot.get("time", "N/A")
+        )
 
         print(
-            f"{course_code:<15}"
-            f"{slot['day']:<18}"
-            f"{slot['time']:<15}"
-            f"{room_id:<15}"
+            f"{str(exam_id):<22}"
+            f"{day:<15}"
+            f"{exam_time:<15}"
+            f"{str(room):<15}"
+            f"{str(professor_name):<30}"
         )
 
-
-# =====================================================
-# VALIDATE SCHEDULE
-# =====================================================
-
-def validate_schedule(
-    exams,
-    rooms,
-    time_slots,
-    conflicts,
-    schedule
-):
-
-    # Check all exams are scheduled
-    if set(schedule.keys()) != set(exams.keys()):
-        return False
-
-    # Check individual assignments
-    for exam_code, assignment in schedule.items():
-
-        slot_index, room_id = assignment
-
-        # Check time slot
-        if not isinstance(slot_index, int):
-            return False
-
-        if not 0 <= slot_index < len(time_slots):
-            return False
-
-        # Check classroom
-        if room_id not in rooms:
-            return False
-
-        # Check examination capacity
-        exam_capacity = rooms[room_id]["exam_capacity"]
-
-        if exams[exam_code]["students"] > exam_capacity:
-            return False
-
-    # Check conflicts between pairs of exams
-    exam_codes = list(schedule.keys())
-
-    for i in range(len(exam_codes)):
-
-        for j in range(i + 1, len(exam_codes)):
-
-            exam1 = exam_codes[i]
-            exam2 = exam_codes[j]
-
-            slot1, room1 = schedule[exam1]
-            slot2, room2 = schedule[exam2]
-
-            if slot1 == slot2:
-
-                # Room collision
-                if room1 == room2:
-                    return False
-
-                # Student-group collision
-                if exam2 in conflicts[exam1]:
-                    return False
-
-    return True
-
-
-# =====================================================
-# WELCOME SCREEN
-# =====================================================
-
-print("\n================================================")
-print("              SMART EXAM SCHEDULER")
-print("================================================")
-
-print("AI-Based University Exam Scheduling System")
-
-print("\nThis system uses four CSP algorithms:")
-print("1. Basic Backtracking")
-print("2. Minimum Remaining Values (MRV)")
-print("3. Forward Checking")
-print("4. MRV + Forward Checking")
-
-print("\nThe system will:")
-print("- Accept university examination information")
-print("- Detect scheduling conflicts")
-print("- Run all four AI algorithms")
-print("- Validate generated schedules")
-print("- Compare algorithm performance")
-print("- Display a valid examination timetable")
-
-
-# =====================================================
-# STEP 1: ENTER EXAMS
-# =====================================================
-
-exams = {}
-
-print("\n================================================")
-print("                 ENTER EXAMS")
-print("================================================")
-
-number_of_exams = get_positive_integer(
-    "\nNumber of Exams: "
-)
-
-for i in range(number_of_exams):
-
-    print(f"\n------------ EXAM {i + 1} ------------")
-
-    while True:
-
-        course_code = get_text(
-            "Course Code: "
-        ).upper()
-
-        if course_code not in exams:
-            break
-
-        print("This course code already exists.")
-
-    course_name = get_text(
-        "Course Name: "
-    )
-
-    number_of_students = get_positive_integer(
-        "Number of Students: "
-    )
-
-
-    exams[course_code] = {
-        "name": course_name,
-        "students": number_of_students
-        
-    }
-
-
-# =====================================================
-# STEP 2: ENTER CLASSROOMS
-# =====================================================
-
-rooms = {}
-
-print("\n================================================")
-print("               ENTER CLASSROOMS")
-print("================================================")
-
-number_of_rooms = get_positive_integer(
-    "\nNumber of Available Classrooms: "
-)
-
-for i in range(number_of_rooms):
-
-    print(f"\n------------ ROOM {i + 1} ------------")
-
-    while True:
-
-        room_id = get_text(
-            "Classroom Name: "
-        ).upper()
-
-        if room_id not in rooms:
-            break
-
-        print("This classroom already exists.")
-
-    physical_capacity = get_positive_integer(
-        "Physical Room Capacity: "
-    )
-
-    while True:
-
-        exam_capacity = get_positive_integer(
-            "Usable Exam Capacity: "
-        )
-
-        if exam_capacity <= physical_capacity:
-            break
-
-        print(
-            "Exam capacity cannot exceed physical capacity."
-        )
-
-    rooms[room_id] = {
-        "capacity": physical_capacity,
-        "exam_capacity": exam_capacity
-    }
-
-
-# =====================================================
-# STEP 3: ENTER AVAILABLE EXAM TIMES
-# =====================================================
-
-print("\n================================================")
-print("            EXAMINATION AVAILABILITY")
-print("================================================")
-
-days = []
-times = []
-time_slots = []
-
-number_of_days = get_positive_integer(
-    "\nNumber of Examination Days: "
-)
-
-for i in range(number_of_days):
-
-    while True:
-
-        day = get_text(
-            f"Enter Day {i + 1}: "
-        )
-
-        if day.upper() not in [d.upper() for d in days]:
-            days.append(day)
-            break
-
-        print("This day has already been entered.")
-
-
-number_of_times = get_positive_integer(
-    "\nNumber of Exam Times Per Day: "
-)
-
-for i in range(number_of_times):
-
-    while True:
-
-        exam_time = get_text(
-            f"Enter Time {i + 1}: "
-        )
-
-        if exam_time.upper() not in [t.upper() for t in times]:
-            times.append(exam_time)
-            break
-
-        print("This time has already been entered.")
-
-
-for day in days:
-
-    for exam_time in times:
-
-        time_slots.append({
-            "day": day,
-            "time": exam_time
-        })
-
-
-# =====================================================
-# STEP 4: DETECT EXAM CONFLICTS
-# =====================================================
-
-conflicts = {
-    exam_code: []
-    for exam_code in exams
-}
-
-total_conflicts = 0
-
-# =====================================================
-# STEP 5: DISPLAY INPUT SUMMARY
-# =====================================================
-
-print("\n================================================")
-print("                 INPUT SUMMARY")
-print("================================================")
-
-print("Total Exams:", len(exams))
-print("Total Classrooms:", len(rooms))
-print("Total Available Time Slots:", len(time_slots))
-
-print("\nDetected Student-Group Conflicts:")
-
-total_conflicts = 0
-
-for exam_code, conflicting_exams in conflicts.items():
+    print("=" * 110)
 
     print(
-        f"{exam_code}: {conflicting_exams}"
+        f"Total scheduled examinations: "
+        f"{len(schedule)}"
     )
 
-    total_conflicts += len(conflicting_exams)
 
-# Each pair was counted twice
-total_conflicts = total_conflicts // 2
+# ============================================================
+# DISPLAY UNIVERSITY INFORMATION
+# ============================================================
 
-print("\nTotal Conflicting Exam Pairs:", total_conflicts)
+def display_university_summary(data):
+    """
+    Display statistics about the selected
+    university scheduling problem.
+    """
 
+    print("\nUNIVERSITY DATA SUMMARY")
+    print("-" * 50)
 
-# =====================================================
-# STEP 6: DEFINE ALL FOUR ALGORITHMS
-# =====================================================
-
-algorithms = {
-    "Basic Backtracking": basic_backtracking,
-    "MRV": mrv_backtracking,
-    "Forward Checking": forward_checking,
-    "MRV + Forward Checking": mrv_forward_checking
-}
-
-
-# =====================================================
-# STEP 7: RUN ALL FOUR ALGORITHMS
-# =====================================================
-
-print("\n================================================")
-print("              RUNNING AI ALGORITHMS")
-print("================================================")
-
-results = {}
-
-for algorithm_name, algorithm_function in algorithms.items():
-
-    print("\nRunning:", algorithm_name)
-
-    result = algorithm_function(
-        exams,
-        rooms,
-        time_slots,
-        conflicts
+    print(
+        "Examinations:",
+        len(data["exams"]),
     )
 
-    # Verify each generated schedule
-    if result["success"]:
+    print(
+        "Students:",
+        len(data["students"]),
+    )
 
-        valid = validate_schedule(
-            exams,
-            rooms,
-            time_slots,
-            conflicts,
-            result["schedule"]
+    print(
+        "Professors:",
+        len(data.get("professors", {})),
+    )
+
+    print(
+        "Rooms:",
+        len(data["rooms"]),
+    )
+
+    print(
+        "Time slots:",
+        len(data["time_slots"]),
+    )
+
+    print(
+        "Departments:",
+        len(data.get("departments", {})),
+    )
+
+    days = {
+        slot["day"]
+        for slot in data["time_slots"]
+    }
+
+    print(
+        "Examination days:",
+        len(days),
+    )
+
+
+# ============================================================
+# INPUT METHOD SELECTION
+# ============================================================
+
+def load_university_data():
+    """
+    Allow users to choose how university
+    scheduling data is provided.
+
+    Returns:
+        University data dictionary.
+    """
+
+    print("\nSMART EXAM SCHEDULER")
+    print("=" * 55)
+
+    print("SELECT UNIVERSITY DATA SOURCE")
+    print("-" * 55)
+
+    print("1. Use sample university data")
+    print("2. Generate experimental dataset")
+    print("3. Import university JSON file")
+    print("4. Enter university JSON manually")
+
+    choice = input(
+        "\nChoose input method (1-4): "
+    ).strip()
+
+    # --------------------------------------------------------
+    # OPTION 1: SAMPLE UNIVERSITY
+    # --------------------------------------------------------
+
+    if choice == "1":
+
+        data = get_university_data()
+
+        print(
+            "\nSample university data loaded."
+        )
+
+    # --------------------------------------------------------
+    # OPTION 2: GENERATED DATASET
+    # --------------------------------------------------------
+
+    elif choice == "2":
+
+        print("\nAVAILABLE DATASET SIZES")
+
+        sizes = list(PRESETS)
+
+        for index, size in enumerate(sizes, 1):
+            print(
+                f"{index}. {size}"
+            )
+
+        size = input(
+            "\nDataset size [small]: "
+        ).strip() or "small"
+
+        if size not in PRESETS:
+            raise ValueError(
+                f"Invalid dataset size: {size}"
+            )
+
+        seed = int(
+            input(
+                "Random seed [42]: "
+            ).strip() or "42"
+        )
+
+        scenarios = (
+            "normal",
+            "restricted",
+            "dense_conflicts",
+            "impossible",
+        )
+
+        print("\nAVAILABLE SCENARIOS")
+
+        for scenario in scenarios:
+            print("-", scenario)
+
+        scenario = input(
+            "\nScenario [normal]: "
+        ).strip() or "normal"
+
+        if scenario not in scenarios:
+            raise ValueError(
+                f"Invalid scenario: {scenario}"
+            )
+
+        data, _, _ = generate_dataset(
+            size,
+            seed,
+            scenario,
+        )
+
+        print(
+            "\nExperimental dataset generated."
+        )
+
+    # --------------------------------------------------------
+    # OPTION 3: IMPORT JSON FILE
+    # --------------------------------------------------------
+
+    elif choice == "3":
+
+        filename = input(
+            "\nUniversity JSON file path: "
+        ).strip().strip('"')
+
+        if not filename:
+            raise ValueError(
+                "A JSON file path is required."
+            )
+
+        path = Path(filename)
+
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"File not found: {filename}"
+            )
+
+        if path.suffix.lower() != ".json":
+            raise ValueError(
+                "Only JSON files are supported "
+                "by this input option."
+            )
+
+        with path.open(
+            "r",
+            encoding="utf-8-sig",
+        ) as file:
+
+            data = json.load(file)
+
+        print(
+            "\nUniversity JSON file imported."
+        )
+
+    # --------------------------------------------------------
+    # OPTION 4: MANUAL JSON ENTRY
+    # --------------------------------------------------------
+
+    elif choice == "4":
+
+        print(
+            "\nEnter your complete university "
+            "data as JSON."
+        )
+
+        print(
+            "Press Enter on an empty line "
+            "when finished."
+        )
+
+        lines = []
+
+        while True:
+
+            line = input()
+
+            if not line.strip():
+                break
+
+            lines.append(line)
+
+        if not lines:
+            raise ValueError(
+                "University JSON input cannot be empty."
+            )
+
+        data = json.loads(
+            "\n".join(lines)
         )
 
     else:
 
-        valid = False
+        raise ValueError(
+            "Invalid input method. Choose 1-4."
+        )
 
-    result["valid"] = valid
+    # ========================================================
+    # VALIDATE UNIVERSITY INPUT
+    # ========================================================
 
-    results[algorithm_name] = result
+    validated_data = (
+        UniversityData.model_validate(data)
+    )
 
-    print("Completed.")
-    print("Solution Found:", result["success"])
-    print("Schedule Valid:", result["valid"])
+    return validated_data.model_dump()
 
 
-# =====================================================
-# STEP 8: ALGORITHM PERFORMANCE COMPARISON
-# =====================================================
+# ============================================================
+# SELECT SCHEDULING ALGORITHM
+# ============================================================
 
-print("\n================================================")
-print("           AI PERFORMANCE COMPARISON")
-print("================================================")
+def select_scheduling_algorithm():
+    """
+    Display all seven CSP algorithm configurations
+    plus automatic algorithm selection.
+    """
 
-print(
-    f"\n{'Algorithm':<26}"
-    f"{'Time (ms)':<12}"
-    f"{'Attempts':<12}"
-    f"{'Backtracks':<12}"
-    f"{'Valid':<8}"
-)
+    algorithms = list(ALGORITHMS) + ["Auto"]
 
-print("-" * 70)
+    print("\nAVAILABLE AI ALGORITHMS")
+    print("=" * 60)
 
-for algorithm_name, result in results.items():
+    for index, algorithm in enumerate(
+        algorithms,
+        start=1,
+    ):
 
-    execution_ms = result["execution_time"] * 1000
+        print(
+            f"{index}. {algorithm}"
+        )
+
+    choice = int(
+        input(
+            "\nSelect algorithm number: "
+        ).strip()
+    )
+
+    if not 1 <= choice <= len(algorithms):
+        raise ValueError(
+            "Invalid algorithm selection."
+        )
+
+    return algorithms[choice - 1]
+
+
+# ============================================================
+# DISPLAY PERFORMANCE METRICS
+# ============================================================
+
+def display_metrics(result):
+    """
+    Display the solver's recorded metrics.
+    """
+
+    print("\nAI PERFORMANCE METRICS")
+    print("=" * 55)
 
     print(
-        f"{algorithm_name:<26}"
-        f"{execution_ms:<12.4f}"
-        f"{result['assignments_attempted']:<12}"
-        f"{result['backtracks']:<12}"
-        f"{str(result['valid']):<8}"
+        "Algorithm:",
+        result.get("algorithm", "N/A"),
     )
-
-
-# =====================================================
-# STEP 9: DISPLAY FINAL EXAM TIMETABLE
-# =====================================================
-
-print("\n================================================")
-print("             FINAL EXAM TIMETABLE")
-print("================================================")
-
-preferred_algorithm = "MRV + Forward Checking"
-
-selected_result = results[preferred_algorithm]
-
-# If the preferred result is invalid,
-# find another valid result
-if not selected_result["valid"]:
-
-    selected_result = None
-
-    for algorithm_name, result in results.items():
-
-        if result["valid"]:
-
-            preferred_algorithm = algorithm_name
-            selected_result = result
-            break
-
-
-if selected_result is not None:
-
-    print("\nSchedule Generated Using:", preferred_algorithm)
-
-    display_schedule(
-        selected_result["schedule"],
-        time_slots
-    )
-
-    print("\nSCHEDULE STATUS: SUCCESS")
-    print("VALIDATION: PASSED")
-
-else:
-
-    print("\nNO VALID SCHEDULE FOUND")
 
     print(
-        "The scheduling constraints could not "
-        "be satisfied with the available resources."
+        "Status:",
+        result.get("status", "UNKNOWN"),
     )
 
+    print(
+        "Success:",
+        result.get("success", False),
+    )
 
-# =====================================================
-# STEP 10: OPTIONAL INDIVIDUAL SCHEDULES
-# =====================================================
+    execution_time = result.get(
+        "execution_time",
+        0,
+    )
 
-show_all = input(
-    "\nDisplay the schedule from each algorithm? (yes/no): "
-).strip().lower()
+    print(
+        "Execution time:",
+        f"{execution_time * 1000:.3f} ms",
+    )
 
-if show_all in ["yes", "y"]:
+    metrics = {
+        "Assignment attempts":
+            "assignments_attempted",
 
-    for algorithm_name, result in results.items():
+        "Backtracks":
+            "backtracks",
 
-        print("\n================================================")
-        print("ALGORITHM:", algorithm_name)
-        print("================================================")
+        "Constraint checks":
+            "constraint_checks",
 
-        if result["valid"]:
+        "Nodes explored":
+            "nodes_explored",
+
+        "Values pruned":
+            "values_pruned",
+
+        "Branches pruned":
+            "branches_pruned",
+
+        "Total domain values":
+            "total_domain_values",
+
+        "Adaptive LCV calls":
+            "adaptive_lcv_calls",
+
+        "Standard LCV calls":
+            "standard_lcv_calls",
+    }
+
+    for label, key in metrics.items():
+
+        if key in result:
+
+            print(
+                f"{label}:",
+                result[key],
+            )
+
+
+# ============================================================
+# INTERACTIVE SCHEDULER
+# ============================================================
+
+def interactive_scheduler():
+    """
+    Complete interactive university scheduling flow.
+
+    1. Select university data source.
+    2. Validate university input.
+    3. Generate student conflict graph.
+    4. Select scheduling algorithm.
+    5. Run AI scheduler.
+    6. Independently validate timetable.
+    7. Display results and performance metrics.
+    """
+
+    # --------------------------------------------------------
+    # 1. LOAD UNIVERSITY DATA
+    # --------------------------------------------------------
+
+    data = load_university_data()
+
+    display_university_summary(
+        data
+    )
+
+    # --------------------------------------------------------
+    # 2. GENERATE STUDENT CONFLICT GRAPH
+    # --------------------------------------------------------
+
+    conflicts = generate_conflicts(
+        data["exams"],
+        get_course_students(
+            data["students"]
+        ),
+    )
+
+    # --------------------------------------------------------
+    # 3. CHOOSE AI ALGORITHM
+    # --------------------------------------------------------
+
+    algorithm = select_scheduling_algorithm()
+
+    # --------------------------------------------------------
+    # 4. CHOOSE TIMEOUT
+    # --------------------------------------------------------
+
+    timeout = float(
+        input(
+            "\nTimeout seconds [30]: "
+        ).strip() or "30"
+    )
+
+    if (
+        not math.isfinite(timeout)
+        or timeout < 0
+    ):
+        raise ValueError(
+            "Timeout must be a finite, "
+            "nonnegative number."
+        )
+
+    # --------------------------------------------------------
+    # 5. RUN AI SCHEDULER
+    # --------------------------------------------------------
+
+    print("\nGENERATING EXAMINATION TIMETABLE")
+    print("=" * 55)
+
+    print(
+        "Selected algorithm:",
+        algorithm,
+    )
+
+    result = run_algorithm(
+        algorithm,
+        data,
+        conflicts,
+        timeout_seconds=timeout,
+    )
+
+    # --------------------------------------------------------
+    # 6. INDEPENDENT VALIDATION
+    # --------------------------------------------------------
+
+    if result["success"]:
+
+        validation = validate_schedule(
+            data["exams"],
+            data["rooms"],
+            data["time_slots"],
+            data["students"],
+            result["schedule"],
+            data.get("professors", {}),
+        )
+
+        print(
+            "\nSchedule valid:",
+            validation["valid"],
+        )
+
+        if validation["valid"]:
 
             display_schedule(
+                data,
                 result["schedule"],
-                time_slots
             )
 
         else:
 
-            print("No validated schedule available.")
+            print(
+                "\nSCHEDULE VALIDATION FAILED"
+            )
+
+            for error in validation["errors"]:
+                print(" -", error)
+
+    else:
+
+        print(
+            "\nNo valid timetable was generated."
+        )
+
+        print(
+            "Solver status:",
+            result["status"],
+        )
+
+        if result["status"] == "TIMEOUT":
+
+            print(
+                "The algorithm reached its time limit. "
+                "This does not prove that the problem "
+                "has no solution."
+            )
+
+        elif result["status"] == "UNSAT":
+
+            print(
+                "The solver determined that the "
+                "constraints cannot all be satisfied."
+            )
+
+    # --------------------------------------------------------
+    # 7. PERFORMANCE METRICS
+    # --------------------------------------------------------
+
+    display_metrics(
+        result
+    )
+
+    return result
 
 
-# =====================================================
-# FINISH
-# =====================================================
+# ============================================================
+# RUN DIRECTLY
+# ============================================================
 
-print("\n================================================")
-print("           SMART EXAM SCHEDULER")
-print("                  FINISHED")
-print("================================================")
+if __name__ == "__main__":
+
+    try:
+        interactive_scheduler()
+
+    except (
+        ValueError,
+        TypeError,
+        KeyError,
+        OSError,
+        json.JSONDecodeError,
+    ) as error:
+
+        print(
+            "\nError:",
+            error,
+        )
+
+    except KeyboardInterrupt:
+
+        print(
+            "\nScheduling cancelled."
+        )

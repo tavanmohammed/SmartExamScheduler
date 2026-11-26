@@ -1,0 +1,29 @@
+size,scenario,algorithm,runs,valid_solutions,success_rate,timeouts,unsat,median_solved_time_ms,median_assignments,median_backtracks,median_constraint_checks,median_nodes
+small,normal,MRV,3,3,100.0,0,0,99.86010000284296,10,0,56294,11
+small,normal,MRV + Forward Checking,3,3,100.0,0,0,25.62449999823002,10,0,16501,11
+small,normal,MRV + FC + LCV,3,3,100.0,0,0,886.7260999977589,10,0,1063425,11
+small,normal,Forward Checking,3,3,100.0,0,0,16.530700002476806,10,0,12121,11
+small,normal,MRV + FC + Degree + Adaptive LCV,3,3,100.0,0,0,23.429599998053163,10,0,15723,11
+small,normal,Basic Backtracking,3,3,100.0,0,0,11.203300000488525,10,0,3198,11
+small,normal,MRV + FC + Degree,3,3,100.0,0,0,20.3962000014144,10,0,15723,11
+small,restricted,MRV,3,3,100.0,0,0,27.18509999976959,10,0,12496,11
+small,restricted,MRV + Forward Checking,3,3,100.0,0,0,6.780400002753595,10,0,3570,11
+small,restricted,MRV + FC + LCV,3,2,66.66666666666667,1,0,209.54134999919916,10.0,0.0,241491.5,11.0
+small,restricted,Forward Checking,3,3,100.0,0,0,12.209700002131285,10,0,9151,11
+small,restricted,MRV + FC + Degree + Adaptive LCV,3,3,100.0,0,0,6.687799999781419,10,0,3570,11
+small,restricted,Basic Backtracking,3,2,66.66666666666667,1,0,4.32714999988093,10.0,0.0,1058.0,11.0
+small,restricted,MRV + FC + Degree,3,3,100.0,0,0,6.398699999408564,10,0,3570,11
+small,dense_conflicts,MRV,3,3,100.0,0,0,90.35399999993388,10,0,52345,11
+small,dense_conflicts,MRV + Forward Checking,3,3,100.0,0,0,23.59220000289497,10,0,15603,11
+small,dense_conflicts,MRV + FC + LCV,3,3,100.0,0,0,850.3693000020576,10,0,1044700,11
+small,dense_conflicts,Forward Checking,3,3,100.0,0,0,14.770000001590233,10,0,13034,11
+small,dense_conflicts,MRV + FC + Degree + Adaptive LCV,3,3,100.0,0,0,22.642100000666687,10,0,15471,11
+small,dense_conflicts,Basic Backtracking,3,3,100.0,0,0,16.020600000047125,10,0,4095,11
+small,dense_conflicts,MRV + FC + Degree,3,3,100.0,0,0,23.61640000162879,10,0,15471,11
+small,impossible,MRV,3,0,0.0,0,3,,,,,
+small,impossible,MRV + Forward Checking,3,0,0.0,0,3,,,,,
+small,impossible,MRV + FC + LCV,3,0,0.0,0,3,,,,,
+small,impossible,Forward Checking,3,0,0.0,0,3,,,,,
+small,impossible,MRV + FC + Degree + Adaptive LCV,3,0,0.0,0,3,,,,,
+small,impossible,Basic Backtracking,3,0,0.0,0,3,,,,,
+small,impossible,MRV + FC + Degree,3,0,0.0,0,3,,,,,

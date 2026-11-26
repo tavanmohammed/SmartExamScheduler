@@ -1,0 +1,29 @@
+size,scenario,algorithm,runs,valid_solutions,success_rate,timeouts,unsat,median_solved_time_ms,median_assignments,median_backtracks,median_constraint_checks,median_nodes
+medium,normal,MRV,3,2,66.66666666666667,1,0,5127.6590500001475,30.0,0.0,4098498.5,31.0
+medium,normal,MRV + Forward Checking,3,2,66.66666666666667,1,0,475.5185999983951,30.0,0.0,454472.0,31.0
+medium,normal,MRV + FC + LCV,3,0,0.0,3,0,,,,,
+medium,normal,Forward Checking,3,2,66.66666666666667,1,0,386.4766500028054,30.0,0.0,373462.0,31.0
+medium,normal,MRV + FC + Degree + Adaptive LCV,3,3,100.0,0,0,470.93750000203727,32,2,460819,31
+medium,normal,Basic Backtracking,3,2,66.66666666666667,1,0,144.72274999934598,30.0,0.0,78647.0,31.0
+medium,normal,MRV + FC + Degree,3,3,100.0,0,0,475.6831000013335,32,2,460819,31
+medium,restricted,MRV,3,0,0.0,3,0,,,,,
+medium,restricted,MRV + Forward Checking,3,0,0.0,3,0,,,,,
+medium,restricted,MRV + FC + LCV,3,0,0.0,3,0,,,,,
+medium,restricted,Forward Checking,3,0,0.0,3,0,,,,,
+medium,restricted,MRV + FC + Degree + Adaptive LCV,3,0,0.0,3,0,,,,,
+medium,restricted,Basic Backtracking,3,0,0.0,3,0,,,,,
+medium,restricted,MRV + FC + Degree,3,0,0.0,3,0,,,,,
+medium,dense_conflicts,MRV,3,0,0.0,3,0,,,,,
+medium,dense_conflicts,MRV + Forward Checking,3,0,0.0,3,0,,,,,
+medium,dense_conflicts,MRV + FC + LCV,3,0,0.0,3,0,,,,,
+medium,dense_conflicts,Forward Checking,3,0,0.0,3,0,,,,,
+medium,dense_conflicts,MRV + FC + Degree + Adaptive LCV,3,0,0.0,3,0,,,,,
+medium,dense_conflicts,Basic Backtracking,3,0,0.0,3,0,,,,,
+medium,dense_conflicts,MRV + FC + Degree,3,0,0.0,3,0,,,,,
+medium,impossible,MRV,3,0,0.0,0,3,,,,,
+medium,impossible,MRV + Forward Checking,3,0,0.0,0,3,,,,,
+medium,impossible,MRV + FC + LCV,3,0,0.0,0,3,,,,,
+medium,impossible,Forward Checking,3,0,0.0,0,3,,,,,
+medium,impossible,MRV + FC + Degree + Adaptive LCV,3,0,0.0,0,3,,,,,
+medium,impossible,Basic Backtracking,3,0,0.0,0,3,,,,,
+medium,impossible,MRV + FC + Degree,3,0,0.0,0,3,,,,,

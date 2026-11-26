@@ -1,239 +1,288 @@
-# ==========================================
-# SMART EXAM SCHEDULER
-# Basic Backtracking vs MRV
-# ==========================================
 
-from backtracking import basic_backtracking
-from mrv import mrv_backtracking
-from forward_checking import forward_checking
-from mrv_forward_checking import mrv_forward_checking
+"""
+SMART EXAM SCHEDULER
+AI Algorithm Performance Comparison
 
-# Two exams with different room requirements
-exams = {
+Compares all seven CSP algorithm configurations
+using the same university dataset.
 
-    "MATH101": {
-        "name": "Mathematics",
-        "students": 30
-    },
+Metrics:
+    - Execution time
+    - Assignment attempts
+    - Backtracks
+    - Constraint checks
+    - Nodes explored
+    - Values pruned
+    - Schedule validity
+    - Solver status
 
-    "PHYS101": {
-        "name": "Engineering Physics",
-        "students": 80
-    }
-}
+All successful schedules are validated independently.
 
+Assignment format:
+    exam_id -> (slot_index, room_id)
 
-# Available rooms
-rooms = {
+No Teaching Assistant dependencies.
+"""
 
-    "LARGE_HALL": {
-        "capacity": 100
-    },
+from university_data import get_university_data
 
-    "SMALL_ROOM": {
-        "capacity": 40
-    }
-}
-
-
-# Only one time slot
-time_slots = [
-    {
-        "day": "Monday",
-        "time": "9:00 AM"
-    }
-]
-
-
-# No shared students
-conflicts = {
-    "MATH101": [],
-    "PHYS101": []
-}
-
-
-# ==========================================
-# RUN BASIC BACKTRACKING
-# ==========================================
-
-basic_result = basic_backtracking(
-    exams,
-    rooms,
-    time_slots,
-    conflicts
+from conflicts import (
+    get_course_students,
+    generate_conflicts,
 )
 
-
-# ==========================================
-# RUN MRV
-# ==========================================
-
-mrv_result = mrv_backtracking(
-    exams,
-    rooms,
-    time_slots,
-    conflicts
+from algorithm_selector import (
+    ALGORITHMS,
+    run_algorithm,
 )
 
-
-# ==========================================
-# DISPLAY COMPARISON
-# ==========================================
-
-print("\n====================================")
-print(" SMART EXAM SCHEDULER")
-print(" BASIC BACKTRACKING VS MRV")
-print("====================================")
-
-print("\nBASIC BACKTRACKING")
-
-print(
-    "Assignments Attempted:",
-    basic_result["assignments_attempted"]
-)
-
-print(
-    "Backtracks:",
-    basic_result["backtracks"]
-)
-
-print(
-    "Execution Time:",
-    round(basic_result["execution_time"], 6)
-)
-
-print(
-    "Solution Found:",
-    basic_result["success"]
-)
+from validator import validate_schedule
 
 
-print("\nMRV BACKTRACKING")
+# ============================================================
+# COMPARE ALL SEVEN AI ALGORITHMS
+# ============================================================
 
-print(
-    "Assignments Attempted:",
-    mrv_result["assignments_attempted"]
-)
+def compare_algorithms(
+    data,
+    timeout_seconds=10,
+):
+    """
+    Run each algorithm on the same university dataset.
 
-print(
-    "Backtracks:",
-    mrv_result["backtracks"]
-)
+    Every algorithm receives:
+        - Identical examinations
+        - Identical rooms
+        - Identical time slots
+        - Identical student conflict graph
+        - Identical professor constraints
+        - Identical timeout
 
-print(
-    "Execution Time:",
-    round(mrv_result["execution_time"], 6)
-)
+    Returns:
+        List of solver results with validation data.
+    """
 
-print(
-    "Solution Found:",
-    mrv_result["success"]
-)
+    # --------------------------------------------------------
+    # 1. BUILD STUDENT CONFLICT GRAPH
+    # --------------------------------------------------------
 
-# ==========================================
-# RUN FORWARD CHECKING
-# ==========================================
+    course_students = get_course_students(
+        data["students"]
+    )
 
-fc_result = forward_checking(
-    exams,
-    rooms,
-    time_slots,
-    conflicts
-)
+    conflicts = generate_conflicts(
+        data["exams"],
+        course_students,
+    )
 
+    # --------------------------------------------------------
+    # 2. RUN EVERY ALGORITHM
+    # --------------------------------------------------------
 
-print("\nFORWARD CHECKING")
+    results = []
 
-print(
-    "Assignments Attempted:",
-    fc_result["assignments_attempted"]
-)
+    for algorithm in ALGORITHMS:
 
-print(
-    "Backtracks:",
-    fc_result["backtracks"]
-)
-
-print(
-    "Execution Time:",
-    round(fc_result["execution_time"], 6)
-)
-
-print(
-    "Solution Found:",
-    fc_result["success"]
-)
-
-
-# Display generated schedule
-if fc_result["success"]:
-
-    print("\nGenerated Schedule:")
-
-    for exam, assignment in fc_result["schedule"].items():
-
-        slot_index, room_id = assignment
-
-        print(
-            exam,
-            "->",
-            time_slots[slot_index]["day"],
-            time_slots[slot_index]["time"],
-            room_id
+        result = run_algorithm(
+            algorithm,
+            data,
+            conflicts,
+            timeout_seconds=timeout_seconds,
         )
 
-# ==========================================
-# RUN MRV + FORWARD CHECKING
-# ==========================================
+        # ----------------------------------------------------
+        # 3. INDEPENDENT SCHEDULE VALIDATION
+        # ----------------------------------------------------
 
-combined_result = mrv_forward_checking(
-    exams,
-    rooms,
-    time_slots,
-    conflicts
-)
+        if result["success"]:
+
+            validation = validate_schedule(
+                data["exams"],
+                data["rooms"],
+                data["time_slots"],
+                data["students"],
+                result["schedule"],
+                data.get("professors", {}),
+            )
+
+        else:
+
+            validation = None
+
+        result["validation"] = validation
+
+        # Prevent treating an invalid timetable
+        # as a successful comparison result.
+        if (
+            result["success"]
+            and not validation["valid"]
+        ):
+
+            result["valid_schedule"] = False
+
+        else:
+
+            result["valid_schedule"] = (
+                validation["valid"]
+                if validation is not None
+                else None
+            )
+
+        results.append(result)
+
+    return results
 
 
-print("\n====================================")
-print("MRV + FORWARD CHECKING")
-print("====================================")
+# ============================================================
+# FORMAT METRICS
+# ============================================================
 
-print(
-    "Assignments Attempted:",
-    combined_result["assignments_attempted"]
-)
+def format_metric(value, decimals=3):
+    """
+    Format a numeric metric safely.
+    """
 
-print(
-    "Backtracks:",
-    combined_result["backtracks"]
-)
+    if value is None:
+        return "N/A"
 
-print(
-    "Execution Time:",
-    round(combined_result["execution_time"], 6)
-)
+    if isinstance(value, float):
+        return f"{value:.{decimals}f}"
 
-print(
-    "Solution Found:",
-    combined_result["success"]
-)
+    return str(value)
 
 
-if combined_result["success"]:
+# ============================================================
+# PRINT PERFORMANCE COMPARISON
+# ============================================================
 
-    print("\nGenerated Schedule:")
+def print_comparison(results):
+    """
+    Print a readable comparison table.
+    """
 
-    for exam, assignment in combined_result["schedule"].items():
+    print("\nSMART EXAM SCHEDULER")
+    print("AI ALGORITHM PERFORMANCE COMPARISON")
+    print("=" * 125)
 
-        slot_index, room_id = assignment
+    print(
+        f"{'Algorithm':<37}"
+        f"{'Time(ms)':>11}"
+        f"{'Attempts':>11}"
+        f"{'Backtracks':>12}"
+        f"{'Checks':>12}"
+        f"{'Nodes':>10}"
+        f"{'Pruned':>10}"
+        f"{'Valid':>9}"
+        f"{'Status':>13}"
+    )
 
-        slot = time_slots[slot_index]
+    print("-" * 125)
 
-        print(
-            f"{exam} | "
-            f"{slot['day']} | "
-            f"{slot['time']} | "
-            f"{room_id}"
+    for result in results:
+
+        execution_time = result.get(
+            "execution_time"
         )
 
-        
+        time_ms = (
+            execution_time * 1000
+            if execution_time is not None
+            else None
+        )
+
+        validation = result.get(
+            "validation"
+        )
+
+        valid = (
+            "YES"
+            if validation is not None
+            and validation["valid"]
+            else (
+                "NO"
+                if validation is not None
+                else "N/A"
+            )
+        )
+
+        print(
+            f"{result['algorithm']:<37}"
+            f"{format_metric(time_ms):>11}"
+            f"{format_metric(result.get('assignments_attempted')):>11}"
+            f"{format_metric(result.get('backtracks')):>12}"
+            f"{format_metric(result.get('constraint_checks')):>12}"
+            f"{format_metric(result.get('nodes_explored')):>10}"
+            f"{format_metric(result.get('values_pruned')):>10}"
+            f"{valid:>9}"
+            f"{result.get('status', 'UNKNOWN'):>13}"
+        )
+
+    print("=" * 125)
+
+
+# ============================================================
+# OPTIONAL DIRECT TEST
+# ============================================================
+
+if __name__ == "__main__":
+
+    data = get_university_data()
+
+    print("\nUniversity Dataset")
+    print("----------------------------")
+
+    print(
+        "Examinations:",
+        len(data["exams"])
+    )
+
+    print(
+        "Students:",
+        len(data["students"])
+    )
+
+    print(
+        "Professors:",
+        len(data["professors"])
+    )
+
+    print(
+        "Rooms:",
+        len(data["rooms"])
+    )
+
+    print(
+        "Time slots:",
+        len(data["time_slots"])
+    )
+
+    results = compare_algorithms(
+        data,
+        timeout_seconds=10,
+    )
+
+    print_comparison(results)
+
+    # --------------------------------------------------------
+    # SUMMARY
+    # --------------------------------------------------------
+
+    successful = sum(
+        result["success"]
+        for result in results
+    )
+
+    valid = sum(
+        result.get("valid_schedule") is True
+        for result in results
+    )
+
+    print(
+        "\nSuccessful algorithms:",
+        f"{successful}/{len(results)}"
+    )
+
+    print(
+        "Independently validated schedules:",
+        f"{valid}/{len(results)}"
+    )

@@ -1,0 +1,103 @@
+{
+  "departments": {
+    "Engineering": [
+      "Software Engineering"
+    ]
+  },
+  "students": {
+    "S001": {
+      "department": "Engineering",
+      "program": "Software Engineering",
+      "year": 2,
+      "courses": [
+        "EX001",
+        "EX002"
+      ]
+    },
+    "S002": {
+      "department": "Engineering",
+      "program": "Software Engineering",
+      "year": 2,
+      "courses": [
+        "EX001",
+        "EX003"
+      ]
+    },
+    "S003": {
+      "department": "Engineering",
+      "program": "Software Engineering",
+      "year": 2,
+      "courses": [
+        "EX002",
+        "EX003"
+      ]
+    }
+  },
+  "exams": {
+    "EX001": {
+      "course_code": "SOFE201",
+      "name": "Data Structures",
+      "department": "Engineering",
+      "programs": [
+        "Software Engineering"
+      ],
+      "professor_id": "P001",
+      "duration_minutes": 120,
+      "room_type": "classroom"
+    },
+    "EX002": {
+      "course_code": "SOFE202",
+      "name": "Operating Systems",
+      "department": "Engineering",
+      "programs": [
+        "Software Engineering"
+      ],
+      "professor_id": "P001",
+      "duration_minutes": 120,
+      "room_type": "classroom"
+    },
+    "EX003": {
+      "course_code": "MATH201",
+      "name": "Discrete Mathematics",
+      "department": "Engineering",
+      "programs": [
+        "Software Engineering"
+      ],
+      "professor_id": "P002",
+      "duration_minutes": 120,
+      "room_type": "classroom"
+    }
+  },
+  "professors": {
+    "P001": {
+      "name": "Professor One",
+      "unavailable_days": []
+    },
+    "P002": {
+      "name": "Professor Two",
+      "unavailable_days": []
+    }
+  },
+  "rooms": {
+    "ROOM_01": {
+      "exam_capacity": 30,
+      "room_type": "classroom"
+    },
+    "ROOM_02": {
+      "exam_capacity": 30,
+      "room_type": "classroom"
+    }
+  },
+  "period": {
+    "start_date": "2026-12-07",
+    "end_date": "2026-12-11",
+    "start_time": "09:00",
+    "end_time": "15:00",
+    "include_saturday": false,
+    "include_sunday": false,
+    "excluded_dates": "",
+    "slot_minutes": 180
+  },
+  "algorithm": "Auto",
+  "timeout_seconds": 30
+}

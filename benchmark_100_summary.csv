@@ -1,0 +1,8 @@
+size,scenario,algorithm,runs,valid_solutions,success_rate,timeouts,unsat,median_solved_time_ms,median_all_time_ms,median_assignments,median_backtracks,median_constraint_checks,median_nodes,median_values_pruned,median_domain_values
+very_large,normal,Basic Backtracking,1,1,100.0,0,0,145.57939999986047,145.57939999986047,100,0,174645,101,0,58500
+very_large,normal,Forward Checking,1,1,100.0,0,0,1963.2930000002489,1963.2930000002489,100,0,2544507,101,10724,58500
+very_large,normal,MRV,1,0,0.0,1,0,,30007.162899999912,,,,,,
+very_large,normal,MRV + FC + Degree,1,1,100.0,0,0,2037.6667999998972,2037.6667999998972,100,0,2651346,101,12903,58500
+very_large,normal,MRV + FC + Degree + Adaptive LCV,1,0,0.0,1,0,,30000.307499999963,,,,,,
+very_large,normal,MRV + FC + LCV,1,0,0.0,1,0,,30000.573899999836,,,,,,
+very_large,normal,MRV + Forward Checking,1,1,100.0,0,0,2354.2842000001656,2354.2842000001656,100,0,2654999,101,13144,58500

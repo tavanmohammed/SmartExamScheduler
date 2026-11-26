@@ -1,31 +1,37 @@
-# ==========================================
-# SMART EXAM SCHEDULER
-# Student Enrollment Data Generator
-# ==========================================
+# Synthetic student enrollment generator
 
 import random
 
 
-def generate_students(exams):
+def generate_students(
+    exams,
+    students_per_program=260,
+    elective_rate=0.10,
+    seed=42
+):
 
-    # Make generated data reproducible
-    random.seed(42)
+    if students_per_program < 0:
+        raise ValueError("Invalid student population")
+
+    if not 0 <= elective_rate <= 1:
+        raise ValueError("Elective rate must be between 0 and 1")
+
+    rng = random.Random(seed)
 
     students = {}
 
-    # Identify every academic program
-    programs = set()
+    programs = {
+        program
+        for exam in exams.values()
+        for program in exam["programs"]
+    }
 
-    for exam in exams.values():
-        for program in exam["programs"]:
-            programs.add(program)
-
-    # Create 260 students for each program
     student_id = 1000
 
+    # Create students for every academic program.
     for program in sorted(programs):
 
-        for i in range(260):
+        for _ in range(students_per_program):
 
             students[str(student_id)] = {
                 "program": program,
@@ -34,49 +40,79 @@ def generate_students(exams):
 
             student_id += 1
 
-    # Register students in courses
-    for course_code, exam in exams.items():
+    # Register students in examinations.
+    for exam_id, exam in exams.items():
 
-        required_students = exam["students"]
+        required = exam["students"]
 
-        # Students from programs associated
-        # with this course
-        preferred_students = [
+        if not 0 <= required <= len(students):
+            raise ValueError(
+                f"Invalid enrollment for {exam_id}"
+            )
+
+        preferred = [
             sid
             for sid, student in students.items()
             if student["program"] in exam["programs"]
         ]
 
-        # Students from other programs who
-        # might take this course as an elective
-        other_students = [
+        others = [
             sid
             for sid, student in students.items()
             if student["program"] not in exam["programs"]
         ]
 
-        # Reserve 10% for cross-program enrollment
-        elective_count = int(required_students * 0.10)
+        elective_count = min(
+            int(required * elective_rate),
+            len(others)
+        )
 
-        regular_count = required_students - elective_count
+        regular_count = min(
+            required - elective_count,
+            len(preferred)
+        )
 
-        # Randomly select registered students
-        selected_regular = random.sample(
-            preferred_students,
+        selected = rng.sample(
+            preferred,
             regular_count
         )
 
-        selected_electives = random.sample(
-            other_students,
+        selected += rng.sample(
+            others,
             elective_count
         )
 
-        selected_students = (
-            selected_regular + selected_electives
-        )
+        remaining = required - len(selected)
 
-        # Add the course to each student's record
-        for sid in selected_students:
-            students[sid]["courses"].append(course_code)
+        if remaining:
+
+            selected_set = set(selected)
+
+            available = [
+                sid
+                for sid in students
+                if sid not in selected_set
+            ]
+
+            selected += rng.sample(
+                available,
+                remaining
+            )
+
+        for sid in selected:
+
+            students[sid]["courses"].append(exam_id)
 
     return students
+
+
+if __name__ == "__main__":
+
+    from university_data import exams
+
+    students = generate_students(
+        exams,
+        students_per_program=10
+    )
+
+    print("Total students:", len(students))

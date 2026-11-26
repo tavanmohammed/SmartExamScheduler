@@ -1,469 +1,554 @@
-# ==========================================
-# SMART EXAM SCHEDULER
-# ==========================================
 
-from students import generate_students
-from conflicts import get_course_students, generate_conflicts
-from backtracking import basic_backtracking
-from mrv import mrv_backtracking
-from forward_checking import forward_checking
-from mrv_forward_checking import mrv_forward_checking
+"""
+SMART EXAM SCHEDULER
+Main Command-Line Application
+
+Features:
+    1. Generate a sample examination schedule
+    2. Interactive scheduling
+    3. Compare seven AI algorithms
+    4. Optimize professor preferences
+    5. Automatic algorithm selection
+    6. Minimum-disruption timetable repair
+    7. Exit
+
+Assignment format:
+    exam_id -> (slot_index, room_id)
+
+No Teaching Assistant dependencies.
+"""
+
+from copy import deepcopy
+
+from university_data import get_university_data
+
+from conflicts import (
+    get_course_students,
+    generate_conflicts,
+)
+
+from algorithm_selector import (
+    run_algorithm,
+    select_algorithm,
+)
+
+from compare_algorithms import compare_algorithms
+
+from preference_optimizer import optimize_preferences
+
+from rescheduling import repair_schedule
+
+from interactive import (
+    interactive_scheduler,
+    display_schedule,
+)
+
 from validator import validate_schedule
-# ==========================================
-# 1. UNIVERSITY EXAMS
-# ==========================================
 
-exams = {
 
-    # ENGINEERING
+# ============================================================
+# HELPERS
+# ============================================================
 
-    "ENG101": {
-        "name": "Engineering Mathematics",
-        "faculty": "Engineering",
-        "programs": [
-            "Software Engineering",
-            "Electrical Engineering"
-        ],
-        "students": 100,
-        "duration": 180
-    },
+def build_conflicts(data):
+    """Generate student examination conflicts."""
 
-    "SOFE301": {
-        "name": "Database Systems",
-        "faculty": "Engineering",
-        "programs": ["Software Engineering"],
-        "students": 60,
-        "duration": 180
-    },
-
-    "SOFE302": {
-        "name": "Design and Analysis of Algorithms",
-        "faculty": "Engineering",
-        "programs": ["Software Engineering"],
-        "students": 70,
-        "duration": 180
-    },
-
-    "ELEE301": {
-        "name": "Circuit Analysis",
-        "faculty": "Engineering",
-        "programs": ["Electrical Engineering"],
-        "students": 80,
-        "duration": 180
-    },
-
-    # SCIENCE
-
-    "MATH101": {
-        "name": "Calculus for Science",
-        "faculty": "Science",
-        "programs": [
-            "Mathematics",
-            "Computer Science"
-        ],
-        "students": 90,
-        "duration": 180
-    },
-
-    "CSCI301": {
-        "name": "Artificial Intelligence",
-        "faculty": "Science",
-        "programs": ["Computer Science"],
-        "students": 60,
-        "duration": 180
-    },
-
-    # BUSINESS
-
-    "BUSI101": {
-        "name": "Business Mathematics",
-        "faculty": "Business",
-        "programs": ["Commerce"],
-        "students": 100,
-        "duration": 180
-    },
-
-    "BUSI201": {
-        "name": "Financial Accounting",
-        "faculty": "Business",
-        "programs": ["Commerce"],
-        "students": 80,
-        "duration": 180
-    }
-}
-
-
-# ==========================================
-# 2. CLASSROOMS
-# ==========================================
-
-rooms = {
-
-    "ROOM_A": {
-        "capacity": 100,
-        "exam_capacity": 70
-    },
-
-    "ROOM_B": {
-        "capacity": 150,
-        "exam_capacity": 100
-    },
-
-    "ROOM_C": {
-        "capacity": 200,
-        "exam_capacity": 150
-    },
-
-    "EXAM_HALL": {
-        "capacity": 250,
-        "exam_capacity": 180
-    }
-}
-
-
-# ==========================================
-# 3. EXAM TIME SLOTS
-# ==========================================
-
-days = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday"
-
-]
-
-times = [
-    "9:00 AM",
-    "1:00 PM"
-]
-
-time_slots = []
-
-for day in days:
-    for time in times:
-
-        time_slots.append({
-            "day": day,
-            "time": time
-        })
-
-
-# ==========================================
-# 4. GENERATE STUDENT ENROLLMENT
-# ==========================================
-
-students = generate_students(exams)
-
-course_students = get_course_students(students)
-
-exam_conflicts = generate_conflicts(
-    exams,
-    course_students
-)
-
-
-# ==========================================
-# 5. DISPLAY UNIVERSITY INFORMATION
-# ==========================================
-
-print("\n====================================")
-print("       SMART EXAM SCHEDULER")
-print("====================================")
-
-print("\nTotal Exams:", len(exams))
-print("Total Classrooms:", len(rooms))
-print("Total Time Slots:", len(time_slots))
-
-print("\nEXAM CONFLICTS")
-
-for exam, conflicting_exams in exam_conflicts.items():
-
-    print(exam, ":", conflicting_exams)
-
-
-# ==========================================
-# 6. RUN BASIC BACKTRACKING
-# ==========================================
-
-result = basic_backtracking(
-    exams,
-    rooms,
-    time_slots,
-    exam_conflicts
-)
-
-
-# ==========================================
-# 7. DISPLAY EXAM SCHEDULE
-# ==========================================
-
-print("\n====================================")
-print("       GENERATED EXAM SCHEDULE")
-print("====================================")
-
-if result["success"]:
-
-    for exam_code, assignment in result["schedule"].items():
-
-        slot_index, room_id = assignment
-
-        slot = time_slots[slot_index]
-
-        print(
-            f"{exam_code} | "
-            f"{slot['day']} | "
-            f"{slot['time']} | "
-            f"{room_id}"
-        )
-
-else:
-
-    print("No valid schedule found.")
-
-
-# ==========================================
-# 8. PERFORMANCE RESULTS
-# ==========================================
-
-print("\n====================================")
-print("       PERFORMANCE RESULTS")
-print("====================================")
-
-print("Execution Time:", round(result["execution_time"], 6))
-print("Assignments Attempted:", result["assignments_attempted"])
-print("Backtracking Operations:", result["backtracks"])
-print("Solution Found:", result["success"])
-
-# ==========================================
-# COMPARE ALL FOUR AI ALGORITHMS
-# ==========================================
-
-print("\n====================================")
-print("       AI ALGORITHM COMPARISON")
-print("====================================")
-
-
-# 1. BASIC BACKTRACKING
-
-basic_result = basic_backtracking(
-    exams,
-    rooms,
-    time_slots,
-    exam_conflicts
-)
-
-
-# 2. MRV
-
-mrv_result = mrv_backtracking(
-    exams,
-    rooms,
-    time_slots,
-    exam_conflicts
-)
-
-
-# 3. FORWARD CHECKING
-
-fc_result = forward_checking(
-    exams,
-    rooms,
-    time_slots,
-    exam_conflicts
-)
-
-
-# 4. MRV + FORWARD CHECKING
-
-combined_result = mrv_forward_checking(
-    exams,
-    rooms,
-    time_slots,
-    exam_conflicts
-)
-
-
-# ==========================================
-# DISPLAY RESULTS
-# ==========================================
-
-results = {
-    "Basic Backtracking": basic_result,
-    "MRV": mrv_result,
-    "Forward Checking": fc_result,
-    "MRV + Forward Checking": combined_result
-}
-
-
-for algorithm, result in results.items():
-
-    print("\nAlgorithm:", algorithm)
-
-    print(
-        "Execution Time:",
-        round(result["execution_time"], 6),
-        "seconds"
+    return generate_conflicts(
+        data["exams"],
+        get_course_students(data["students"]),
     )
 
-    print(
-        "Assignments Attempted:",
-        result["assignments_attempted"]
-    )
 
-    print(
-        "Backtracks:",
-        result["backtracks"]
-    )
+def validate_result(data, result):
+    """Independently validate a successful timetable."""
 
-    print(
-        "Solution Found:",
-        result["success"]
-    )
-
-    print("------------------------------------")
-
-# ==========================================
-# AUTOMATIC SCHEDULE VALIDATION
-# ==========================================
-
-print("\n====================================")
-print("       SCHEDULE VALIDATION")
-print("====================================")
-
-
-for algorithm, result in results.items():
-
-    print("\nAlgorithm:", algorithm)
-
-    # An unsolved problem has no complete
-    # schedule to validate
     if not result["success"]:
-
-        print("No schedule found.")
-        continue
+        print("No timetable was generated.")
+        return False
 
     validation = validate_schedule(
-        exams,
-        rooms,
-        time_slots,
-        students,
-        result["schedule"]
+        data["exams"],
+        data["rooms"],
+        data["time_slots"],
+        data["students"],
+        result["schedule"],
+        data.get("professors", {}),
     )
 
-    if validation["valid"]:
+    print(
+        "Schedule valid:",
+        validation["valid"],
+    )
 
-        print("VALID SCHEDULE")
-
-        print("All scheduling constraints satisfied!")
-
-    else:
-
-        print("INVALID SCHEDULE")
+    if not validation["valid"]:
+        print("Validation errors:")
 
         for error in validation["errors"]:
             print(" -", error)
 
-    print("------------------------------------")
-
-    # ==========================================
-# EXPERIMENT 1
-# EFFECT OF AVAILABLE TIME SLOTS
-# ==========================================
-
-print("\n====================================")
-print("EXPERIMENT 1: TIME SLOT AVAILABILITY")
-print("====================================")
+    return validation["valid"]
 
 
-# Define different exam periods
-experiment_days = [
-    ["Monday", "Tuesday", "Wednesday", "Thursday"],
+def show_metrics(result):
+    """Display basic algorithm performance metrics."""
 
-    ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    print("\nALGORITHM METRICS")
+    print("-" * 45)
 
-    ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-]
+    print(
+        "Algorithm:",
+        result.get("algorithm", "N/A"),
+    )
+
+    print(
+        "Status:",
+        result["status"],
+    )
+
+    print(
+        "Execution time:",
+        f"{result.get('execution_time', 0) * 1000:.3f} ms",
+    )
+
+    print(
+        "Assignment attempts:",
+        result.get("assignments_attempted", 0),
+    )
+
+    print(
+        "Backtracks:",
+        result.get("backtracks", 0),
+    )
+
+    print(
+        "Constraint checks:",
+        result.get("constraint_checks", 0),
+    )
+
+    print(
+        "Nodes explored:",
+        result.get("nodes_explored", 0),
+    )
+
+    print(
+        "Values pruned:",
+        result.get("values_pruned", 0),
+    )
 
 
-# Define all algorithms
-algorithms = {
-    "Basic Backtracking": basic_backtracking,
-    "MRV": mrv_backtracking,
-    "Forward Checking": forward_checking,
-    "MRV + Forward Checking": mrv_forward_checking
-}
+# ============================================================
+# OPTION 1: GENERATE SAMPLE SCHEDULE
+# ============================================================
 
+def generate_sample_schedule():
 
-# Run experiments
-for test_number, days_list in enumerate(experiment_days, start=1):
+    data = get_university_data()
+    conflicts = build_conflicts(data)
 
-    # Generate time slots
-    experiment_slots = []
+    result = run_algorithm(
+        "MRV + Forward Checking",
+        data,
+        conflicts,
+        timeout_seconds=30,
+    )
 
-    for day in days_list:
+    show_metrics(result)
 
-        for exam_time in ["9:00 AM", "1:00 PM"]:
-
-            experiment_slots.append({
-                "day": day,
-                "time": exam_time
-            })
-
-    print("\n------------------------------------")
-    print("TEST CASE:", test_number)
-    print("Number of Exams:", len(exams))
-    print("Number of Rooms:", len(rooms))
-    print("Number of Time Slots:", len(experiment_slots))
-    print("------------------------------------")
-
-    # Test all four algorithms
-    for algorithm_name, algorithm_function in algorithms.items():
-
-        experiment_result = algorithm_function(
-            exams,
-            rooms,
-            experiment_slots,
-            exam_conflicts
+    if validate_result(data, result):
+        display_schedule(
+            data,
+            result["schedule"],
         )
 
-        # Independently check each solution
-        if experiment_result["success"]:
 
-            validation = validate_schedule(
-                exams,
-                rooms,
-                experiment_slots,
-                students,
-                experiment_result["schedule"]
+# ============================================================
+# OPTION 3: COMPARE AI ALGORITHMS
+# ============================================================
+
+def compare_sample_algorithms():
+
+    data = get_university_data()
+
+    results = compare_algorithms(
+        data,
+        timeout_seconds=10,
+    )
+
+    print("\nAI ALGORITHM COMPARISON")
+    print("=" * 85)
+
+    print(
+        f"{'Algorithm':<38}"
+        f"{'Time(ms)':>12}"
+        f"{'Attempts':>12}"
+        f"{'Backtracks':>12}"
+        f"{'Valid':>10}"
+    )
+
+    print("-" * 85)
+
+    for result in results:
+
+        execution_time = (
+            result.get("execution_time", 0) * 1000
+        )
+
+        valid = result.get("valid_schedule")
+
+        print(
+            f"{result['algorithm']:<38}"
+            f"{execution_time:>12.3f}"
+            f"{result.get('assignments_attempted', 0):>12}"
+            f"{result.get('backtracks', 0):>12}"
+            f"{str(valid):>10}"
+        )
+
+
+# ============================================================
+# OPTION 4: OPTIMIZE PROFESSOR PREFERENCES
+# ============================================================
+
+def optimize_sample_preferences():
+
+    data = get_university_data()
+    conflicts = build_conflicts(data)
+
+    result = optimize_preferences(
+        data["exams"],
+        data["rooms"],
+        data["time_slots"],
+        conflicts,
+        professors=data.get("professors", {}),
+        timeout_seconds=30,
+    )
+
+    show_metrics(result)
+
+    if validate_result(data, result):
+
+        display_schedule(
+            data,
+            result["schedule"],
+        )
+
+        preferences = result[
+            "preference_results"
+        ]
+
+        print("\nPROFESSOR PREFERENCES")
+        print("-" * 45)
+
+        print(
+            "Total penalty:",
+            result["total_penalty"],
+        )
+
+        satisfaction = preferences[
+            "satisfaction_rate"
+        ]
+
+        print(
+            "Satisfaction rate:",
+            (
+                f"{satisfaction:.2f}%"
+                if satisfaction is not None
+                else "N/A"
+            ),
+        )
+
+        print(
+            "Examinations satisfying preferences:",
+            preferences["satisfied_exams"],
+        )
+
+        print(
+            "Examinations with preferences:",
+            preferences["exams_with_preferences"],
+        )
+
+
+# ============================================================
+# OPTION 5: AUTOMATIC ALGORITHM SELECTION
+# ============================================================
+
+def generate_auto_schedule():
+
+    data = get_university_data()
+    conflicts = build_conflicts(data)
+
+    recommendation = select_algorithm(
+        data,
+        conflicts,
+    )
+
+    print("\nAUTOMATIC AI RECOMMENDATION")
+    print("-" * 45)
+
+    print(
+        "Recommended algorithm:",
+        recommendation["algorithm"],
+    )
+
+    print(
+        "Reason:",
+        recommendation["reason"],
+    )
+
+    print(
+        "Problem complexity:",
+        recommendation["complexity"],
+    )
+
+    if recommendation.get("warning"):
+        print(
+            "Warning:",
+            recommendation["warning"],
+        )
+
+    result = run_algorithm(
+        "Auto",
+        data,
+        conflicts,
+        timeout_seconds=30,
+    )
+
+    show_metrics(result)
+
+    if validate_result(data, result):
+        display_schedule(
+            data,
+            result["schedule"],
+        )
+
+
+# ============================================================
+# OPTION 6: MINIMUM-DISRUPTION REPAIR
+# ============================================================
+
+def demonstrate_schedule_repair():
+
+    # Use a copy so the sample dataset is not
+    # permanently modified during the demonstration.
+
+    data = deepcopy(
+        get_university_data()
+    )
+
+    conflicts = build_conflicts(data)
+
+    original_result = run_algorithm(
+        "MRV + FC + Degree",
+        data,
+        conflicts,
+        timeout_seconds=30,
+    )
+
+    if not original_result["success"]:
+        print(
+            "Unable to generate an original timetable."
+        )
+        return
+
+    original_schedule = (
+        original_result["schedule"]
+    )
+
+    print("\nORIGINAL TIMETABLE")
+    print("-" * 45)
+
+    if not validate_result(
+        data,
+        original_result,
+    ):
+        return
+
+    display_schedule(
+        data,
+        original_schedule,
+    )
+
+    # --------------------------------------------------------
+    # SIMULATE AN UNEXPECTED ROOM CLOSURE
+    # --------------------------------------------------------
+
+    if not original_schedule:
+        print("No exams available for repair.")
+        return
+
+    exam_id = next(
+        iter(original_schedule)
+    )
+
+    slot, room = original_schedule[exam_id]
+
+    data["rooms"][room].setdefault(
+        "unavailable_slots",
+        [],
+    )
+
+    if slot not in data["rooms"][room][
+        "unavailable_slots"
+    ]:
+
+        data["rooms"][room][
+            "unavailable_slots"
+        ].append(slot)
+
+    print("\nSIMULATED DISRUPTION")
+    print("-" * 45)
+
+    print(
+        "Room:",
+        room,
+    )
+
+    print(
+        "Unavailable slot:",
+        slot,
+    )
+
+    print(
+        "Affected exam:",
+        exam_id,
+    )
+
+    # --------------------------------------------------------
+    # REPAIR THE SCHEDULE
+    # --------------------------------------------------------
+
+    result = repair_schedule(
+        data["exams"],
+        data["rooms"],
+        data["time_slots"],
+        conflicts,
+        original_schedule,
+        professors=data.get("professors", {}),
+        timeout_seconds=30,
+    )
+
+    show_metrics(result)
+
+    if validate_result(data, result):
+
+        print("\nREPAIRED TIMETABLE")
+        print("-" * 45)
+
+        display_schedule(
+            data,
+            result["schedule"],
+        )
+
+        print("\nREPAIR RESULTS")
+        print("-" * 45)
+
+        print(
+            "Changed examinations:",
+            result["changed_exams"],
+        )
+
+        print(
+            "Moved examinations:",
+            result["moved_exams"],
+        )
+
+        print(
+            "Preserved examinations:",
+            result["preserved_exams"],
+        )
+
+        print("\nCHANGES:")
+
+        for change in result["changes"]:
+
+            print(
+                change["exam"],
+                ":",
+                change["old_assignment"],
+                "->",
+                change["new_assignment"],
             )
 
-            if not validation["valid"]:
+
+# ============================================================
+# MAIN MENU
+# ============================================================
+
+def main():
+
+    while True:
+
+        print("\n" + "=" * 55)
+        print("SMART EXAM SCHEDULER")
+        print("=" * 55)
+
+        print("1. Generate sample schedule")
+        print("2. Interactive scheduling")
+        print("3. Compare AI algorithms")
+        print("4. Optimize professor preferences")
+        print("5. Automatic algorithm selection")
+        print("6. Minimum-disruption timetable repair")
+        print("7. Exit")
+
+        choice = input(
+            "\nSelect an option (1-7): "
+        ).strip()
+
+        try:
+
+            if choice == "1":
+                generate_sample_schedule()
+
+            elif choice == "2":
+                interactive_scheduler()
+
+            elif choice == "3":
+                compare_sample_algorithms()
+
+            elif choice == "4":
+                optimize_sample_preferences()
+
+            elif choice == "5":
+                generate_auto_schedule()
+
+            elif choice == "6":
+                demonstrate_schedule_repair()
+
+            elif choice == "7":
+
                 print(
-                    "ERROR: Invalid schedule from",
-                    algorithm_name
+                    "\nExiting Smart Exam Scheduler."
                 )
-                print(validation["errors"])
-                continue
 
-        print("\nAlgorithm:", algorithm_name)
+                break
 
-        print(
-            "Execution Time:",
-            round(experiment_result["execution_time"], 6)
-        )
+            else:
 
-        print(
-            "Assignments:",
-            experiment_result["assignments_attempted"]
-        )
+                print(
+                    "Invalid option. Choose 1-7."
+                )
 
-        print(
-            "Backtracks:",
-            experiment_result["backtracks"]
-        )
+        except (
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+        ) as error:
 
-        print(
-            "Solution Found:",
-            experiment_result["success"]
-        )
+            print(
+                "\nError:",
+                error,
+            )
+
+        except KeyboardInterrupt:
+
+            print(
+                "\nOperation cancelled."
+            )
+
+
+# ============================================================
+# APPLICATION ENTRY POINT
+# ============================================================
+
+if __name__ == "__main__":
+    main()

@@ -1,20 +1,31 @@
-# Python temporary files
-__pycache__/
-*.pyc
 
-# Python virtual environments
+
+@'
+# Python
 .venv/
 venv/
+__pycache__/
+*.pyc
+.pytest_cache/
 
 # Environment variables and secrets
 .env
 .env.*
 !.env.example
 
-# VS Code
-.vscode/
+# Generated scheduling data
+uploaded_data/
+uploaded_results/
+uploaded_reports/
 
-# Operating system files
+# Editor files
+.vscode/
+.idea/
+
+# Operating system
 .DS_Store
 Thumbs.db
 
+# Logs
+*.log
+'@ | Set-Content -Path .gitignore -Encoding utf8

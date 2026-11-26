@@ -1,0 +1,8 @@
+algorithm,passed,seconds,scheduled,status,job_id,details
+Basic Backtracking,True,0.142,3,SOLVED,ac1f7fe6854a4d29bcf789fe6152ca8d,PASS
+MRV,True,0.009,3,SOLVED,0c101f4dfebe46ff8ebed0346014926e,PASS
+Forward Checking,True,0.007,3,SOLVED,d5db8efd4a8a4bd0a2d91f5bf5fcf3e3,PASS
+MRV + Forward Checking,True,0.035,3,SOLVED,8640fc323b8c4c4b8506b0386be77397,PASS
+MRV + FC + LCV,True,0.014,3,SOLVED,1ce2ed943c314e44aef427005d8a3113,PASS
+MRV + FC + Degree,True,0.026,3,SOLVED,18a0e8d1687c40f0ad41b983eca26d81,PASS
+MRV + FC + Degree + Adaptive LCV,True,0.017,3,SOLVED,23a081d2ce6441dda8fcce87bf48a857,PASS
